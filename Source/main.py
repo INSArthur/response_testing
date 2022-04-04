@@ -4,6 +4,7 @@ import sys
 import csv
 import cv2
 import time
+import screeninfo
 from pynput import keyboard
 
 VIDEO_PATH = "../testing_videos/"
@@ -13,6 +14,7 @@ VIDEOS = ["1B1H.m4v", "1B1L.m4v", "1B2H.m4v", "1B2L.m4v", "1B3H.m4v", "1B3L.m4v"
 
 # Find the tested_videos
 tested_videos = sys.argv[1:5]
+tested_videos = [i+".m4v" for i in tested_videos]
 try:
     iVideos = [VIDEOS.index(i) for i in tested_videos]
 except ValueError:
@@ -22,8 +24,6 @@ except ValueError:
 f = open(CSV_PATH+CSV_NAME,'a')#time.strftime("%d-%m_%H:%M"), 'w')
 reader = csv.reader(f)
 writer = csv.writer(f)
-
-#iPerson = sum(1 for row in reader)
 
 # Time variables
 starting_times = []
@@ -43,6 +43,15 @@ listener = keyboard.Listener(on_press=on_press)
 listener.start()
 
 for tested_video in tested_videos :
+    screen_id = 0
+    screen = screeninfo.get_monitors()[screen_id]
+    width, height = screen.width, screen.height
+    window_name = 'projector'
+    cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
+    cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
+    cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,
+                          cv2.WINDOW_FULLSCREEN)
+
     space_pressed = False
     cap = cv2.VideoCapture(VIDEO_PATH + tested_video) # Encapsulation de la tested_video dans une classe dediee
     fps = int(cap.get(cv2.CAP_PROP_FPS))  # Determination des fps
@@ -60,7 +69,7 @@ for tested_video in tested_videos :
 
             time.sleep(1.0 / fps)  # Lit l'image a vitesse humaine prescrite par la variable "fps"
 
-            cv2.imshow('frame', frame)  # Affiche l'image dans uen nouvelle fenetre
+            cv2.imshow(window_name, frame)  # Affiche l'image dans uen nouvelle fenetre
 
             if cv2.waitKey(1) & 0xFF == ord('q'):  # Quitte lors de l'appuie sur q
                 break
@@ -76,10 +85,12 @@ corrected_time_event=[]
 for i,t in enumerate(events_time) :
     corrected_time_event.append(t - starting_times[i])
 
-row = [0] * len(VIDEOS)
+row = [0] * (len(VIDEOS)+1)
+row[0] = time.strftime("%d-%m_%H:%M")
 
 for i, t in enumerate(corrected_time_event):
-    row[iVideos[i]] = t
+    row[iVideos[i]+1] = t
+
 
 # write a row to the csv file
 writer.writerow(row)
