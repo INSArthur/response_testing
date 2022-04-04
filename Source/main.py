@@ -4,6 +4,7 @@ import sys
 import csv
 import cv2
 import time
+import screeninfo
 from pynput import keyboard
 
 VIDEO_PATH = "../testing_videos/"
@@ -23,7 +24,16 @@ f = open(CSV_PATH+CSV_NAME,'a')#time.strftime("%d-%m_%H:%M"), 'w')
 reader = csv.reader(f)
 writer = csv.writer(f)
 
-#iPerson = sum(1 for row in reader)
+#Screen parameters
+screen_id = 0
+screen = screeninfo.get_monitors()[screen_id]
+width, height = screen.width, screen.height
+window_name = 'projector'
+cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
+cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
+cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,
+                          cv2.WINDOW_FULLSCREEN)
+
 
 # Time variables
 starting_times = []
@@ -60,7 +70,7 @@ for tested_video in tested_videos :
 
             time.sleep(1.0 / fps)  # Lit l'image a vitesse humaine prescrite par la variable "fps"
 
-            cv2.imshow('frame', frame)  # Affiche l'image dans uen nouvelle fenetre
+            cv2.imshow(window_name, frame)  # Affiche l'image dans uen nouvelle fenetre
 
             if cv2.waitKey(1) & 0xFF == ord('q'):  # Quitte lors de l'appuie sur q
                 break
@@ -70,16 +80,18 @@ for tested_video in tested_videos :
 
     cap.release()
     cv2.destroyAllWindows()
-    input("Press Enter to continue...")
+    raw_input("Press Enter to continue...")
 
 corrected_time_event=[]
 for i,t in enumerate(events_time) :
     corrected_time_event.append(t - starting_times[i])
 
-row = [0] * len(VIDEOS)
+row = [time.strftime("%d-%m_%H:%M")]
+row =append( [0] * len(VIDEOS))
 
 for i, t in enumerate(corrected_time_event):
     row[iVideos[i]] = t
+
 
 # write a row to the csv file
 writer.writerow(row)
